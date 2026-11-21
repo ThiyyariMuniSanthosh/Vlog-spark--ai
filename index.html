@@ -857,6 +857,7 @@
           role: 'Student',
           defaultPlatform: 'Instagram Reels',
           defaultLanguage: 'English',
+          apiBaseUrl: '',
           demoMode: true
         },
         projects: JSON.parse(JSON.stringify(DEFAULT_PROJECTS)),
@@ -876,6 +877,7 @@
           isEditing: false,
           isLoading: false,
           error: '',
+          apiError: '',
           variation: 0,
           result: null
         }
@@ -1377,6 +1379,10 @@
                   </select>
                 </div>
               </div>
+              <div>
+                <label for="set-api-url" class="block text-xs font-semibold text-slate-700 mb-1">Backend API Base URL (optional — leave blank for same-origin /api/generate-content)</label>
+                <input id="set-api-url" type="url" value="${escapeHtml(state.user.apiBaseUrl || '')}" placeholder="https://your-backend.replit.app" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm" />
+              </div>
               <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
                 <button type="button" id="reset-demo-data-btn" class="px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100">Reset Sample Projects</button>
                 <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white">Save Preferences</button>
@@ -1557,6 +1563,7 @@
         const srtPreview = scenes.map((s, idx) => `${idx + 1}\n00:00:${String(idx * 12).padStart(2, '0')},000 --> 00:00:${String((idx + 1) * 12).padStart(2, '0')},000\n${s.line}`).join('\n\n');
 
         return {
+          sourceMode: 'demo_preview',
           title: rawTitle,
           platform: cfg.platform,
           language: cfg.language,
@@ -1580,6 +1587,86 @@
           langNote: flavor.subNote,
           isTextPost
         };
+      }
+
+
+      async function callGenerateContentAPI() {
+        const g = state.aiGen;
+        g.isLoading = true;
+        g.apiError = '';
+        renderDashboard();
+
+        const base = (state.user.apiBaseUrl || '').trim().replace(/\/+$/, '');
+        const endpoint = base ? `${base}/api/generate-content` : '/api/generate-content';
+
+        try {
+          const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: g.title,
+              platform: g.platform,
+              language: g.language,
+              content_type: g.contentType,
+              tone: g.tone,
+              duration: g.duration,
+              audience: g.audience,
+              variation: g.variation || 0
+            })
+          });
+
+          const data = await resp.json().catch(() => null);
+          if (!resp.ok) {
+            const msg = (data && data.detail) ? data.detail : `Server returned HTTP ${resp.status}`;
+            throw new Error(msg);
+          }
+
+          if (!data || !data.hook || !data.full_script || !Array.isArray(data.scenes)) {
+            throw new Error('Backend returned an incomplete content structure.');
+          }
+
+          g.result = {
+            sourceMode: 'live_ai',
+            title: data.title || g.title,
+            platform: data.platform || g.platform,
+            language: data.language || g.language,
+            contentType: data.content_type || g.contentType,
+            tone: data.tone || g.tone,
+            duration: data.duration || g.duration,
+            audience: data.audience || g.audience,
+            hook: data.hook,
+            intro: data.intro || '',
+            talkingPoints: Array.isArray(data.talking_points) ? data.talking_points : [],
+            exampleStory: data.example_story || '',
+            conclusion: '',
+            fullScript: data.full_script,
+            voiceover: data.voiceover || '',
+            speakingGuide: Array.isArray(data.speaking_guide) ? data.speaking_guide : [],
+            scenes: data.scenes.map(s => ({
+              num: s.num,
+              time: s.time,
+              shot: s.shot,
+              camera: s.camera,
+              line: s.line,
+              onScreen: s.on_screen || '',
+              broll: s.broll || '',
+              visualPrompt: s.visual_prompt || ''
+            })),
+            captions: Array.isArray(data.captions) ? data.captions : [],
+            hashtags: data.hashtags || '',
+            musicMood: data.music_mood || '',
+            srtPreview: data.srt_preview || '',
+            langNote: data.lang_note || 'Generated live via Gemini API'
+          };
+          g.isLoading = false;
+          showToast('Generated live AI content via Gemini');
+          renderDashboard();
+        } catch (err) {
+          g.isLoading = false;
+          g.apiError = err && err.message ? err.message : 'Unable to reach /api/generate-content.';
+          showToast('API request failed — see error banner', 'error');
+          renderDashboard();
+        }
       }
 
       function renderCreateWithAIPage(container) {
@@ -1805,11 +1892,32 @@
               </div>
             </form>
 
+            ${g.isLoading ? `
+              <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-center gap-3 text-sm text-blue-900 animate-fade-up">
+                <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                <div><strong>Calling /api/generate-content...</strong> Sending your topic to the FastAPI Gemini backend.</div>
+              </div>
+            ` : ''}
+
+            ${g.apiError ? `
+              <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-rose-900">
+                <div>
+                  <strong>Backend API Unavailable:</strong> ${escapeHtml(g.apiError)}
+                  <span class="block text-xs text-rose-700 mt-0.5">Start the FastAPI backend with GEMINI_API_KEY set, or use the offline Demo Preview below.</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" id="ai-retry-api-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white">Retry API</button>
+                  <button type="button" id="ai-use-demo-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white border border-rose-300 text-rose-700 hover:bg-rose-100">Use Demo Preview</button>
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Output Package Card -->
             <div class="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
               <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <div class="text-xs font-semibold text-slate-600">
-                  Generated Package: <span class="text-slate-900 font-bold">${escapeHtml(res.title)}</span> • ${escapeHtml(res.language)} • ${escapeHtml(res.platform)}
+                <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${res.sourceMode === 'live_ai' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">${res.sourceMode === 'live_ai' ? 'Live Gemini AI' : 'Demo Preview (Not Live AI)'}</span>
+                  <span>Package: <span class="text-slate-900 font-bold">${escapeHtml(res.title)}</span> • ${escapeHtml(res.language)} • ${escapeHtml(res.platform)}</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                   <button type="button" id="ai-copy-all-btn" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Copy</button>
@@ -2230,12 +2338,21 @@
             }
             return;
           }
+          if (e.target.closest('#ai-retry-api-btn')) {
+            callGenerateContentAPI();
+            return;
+          }
+          if (e.target.closest('#ai-use-demo-btn')) {
+            state.aiGen.apiError = '';
+            state.aiGen.result = buildGeneratedContentPackage(state.aiGen);
+            showToast('Loaded Demo Preview (offline mode)');
+            renderDashboard();
+            return;
+          }
           if (e.target.closest('#ai-regen-btn')) {
             state.aiGen.variation += 1;
             state.aiGen.isEditing = false;
-            state.aiGen.result = buildGeneratedContentPackage(state.aiGen);
-            showToast('Generated fresh hook & variation');
-            renderDashboard();
+            callGenerateContentAPI();
             return;
           }
           if (e.target.closest('#ai-download-btn')) {
@@ -2281,7 +2398,7 @@
               language: r.language,
               duration: r.duration,
               mood: r.tone,
-              status: 'AI Generated',
+              status: r.sourceMode === 'live_ai' ? 'Live AI Generated' : 'Demo Preview',
               scheduledDate: '2026-11-29',
               starred: false,
               concept: r.intro,
@@ -2323,9 +2440,7 @@
             state.aiGen.audience = document.getElementById('ai-audience').value;
             state.aiGen.error = '';
             state.aiGen.isEditing = false;
-            state.aiGen.result = buildGeneratedContentPackage(state.aiGen);
-            showToast('Generated complete content package');
-            renderDashboard();
+            callGenerateContentAPI();
           }
         });
 
@@ -2435,6 +2550,7 @@
             state.user.role = document.getElementById('set-role').value;
             state.user.defaultPlatform = document.getElementById('set-platform').value;
             state.user.defaultLanguage = document.getElementById('set-language').value;
+            state.user.apiBaseUrl = (document.getElementById('set-api-url')?.value || '').trim();
             persistState();
             showToast('Preferences saved');
             renderDashboard();
