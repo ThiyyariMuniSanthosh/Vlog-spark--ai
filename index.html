@@ -869,7 +869,7 @@
           title: 'Why students should learn Artificial Intelligence',
           platform: 'YouTube Shorts',
           language: 'English',
-          contentType: 'Daily Vlogger',
+          contentType: 'Educational',
           tone: 'Casual & Conversational',
           duration: '60 sec',
           audience: 'Students & Beginners',
@@ -1419,14 +1419,6 @@
           cta: 'Ee video meeku useful anipisthe save cheskondi, mee opinion comments lo cheppandi.',
           subNote: 'Everyday spoken Telugu with natural English tech/topic terms.'
         },
-        'Tanglish': {
-          opener: (t, v) => v % 2 === 0
-            ? `Seri, unmaiya sollanumna ${t} pathi namma neraya pesuvom, aana reality enna-nu 60 seconds-la paakalam.`
-            : `Wait oru second — ${t} pathi neenga think pannadha oru simple angle irukku.`,
-          bridge: 'Idhula main-a gavanikka vendiya vishayam enna-na:',
-          cta: 'Indha video ungalukku relatable-a irundha save pannunga, comment-la unga thought-a sollunga.',
-          subNote: 'Natural Tanglish (Tamil + English) conversational flow.'
-        },
         'Tamil': {
           opener: (t, v) => v % 2 === 0
             ? `Unmaiya sollanumna, ${t} pathi neraya per pesuranga, aana idhu namma daily life-la eppadi help pannum-nu simple-a paakalam.`
@@ -1570,16 +1562,9 @@
 
         const srtPreview = scenes.map((s, idx) => `${idx + 1}\n00:00:${String(idx * 12).padStart(2, '0')},000 --> 00:00:${String((idx + 1) * 12).padStart(2, '0')},000\n${s.line}`).join('\n\n');
 
-        const threeHooks = [
-          hook,
-          `Honestly, nobody talks about the real side of ${topic}—so let's keep it super simple today.`,
-          `Quick question before you scroll: what's the first thing that comes to your mind when you hear ${topic}?`
-        ];
         return {
           sourceMode: 'demo_preview',
           title: rawTitle,
-          threeHooks,
-          strongEndingCta: conclusion,
           platform: cfg.platform,
           language: cfg.language,
           contentType: cfg.contentType,
@@ -1649,10 +1634,8 @@
             tone: data.tone || g.tone,
             duration: data.duration || g.duration,
             audience: data.audience || g.audience,
-            threeHooks: Array.isArray(data.three_hooks) ? data.three_hooks : [data.hook],
             hook: data.hook,
             intro: data.intro || '',
-            strongEndingCta: data.strong_ending_cta || '',
             talkingPoints: Array.isArray(data.talking_points) ? data.talking_points : [],
             exampleStory: data.example_story || '',
             conclusion: '',
@@ -1667,7 +1650,6 @@
               line: s.line,
               onScreen: s.on_screen || '',
               broll: s.broll || '',
-              editingTransition: s.editing_transition || 'Smooth J-cut / natural pace transition',
               visualPrompt: s.visual_prompt || ''
             })),
             captions: Array.isArray(data.captions) ? data.captions : [],
@@ -1716,19 +1698,10 @@
             </div>
           ` : `
             <div class="space-y-4">
-              <div class="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold uppercase tracking-wider text-blue-700">3 Natural Opening Hooks</span>
-                  <span class="text-[11px] text-slate-500">${escapeHtml(res.langNote)}</span>
-                </div>
-                <div class="space-y-2">
-                  ${(res.threeHooks || [res.hook]).map((hk, i) => `
-                    <div class="bg-white/85 border border-blue-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                      <span class="text-sm font-medium text-slate-900"><strong class="text-blue-700">Hook ${i + 1}:</strong> ${escapeHtml(hk)}</span>
-                      <button type="button" data-copy-line="${escapeHtml(hk)}" class="copy-line-btn px-2 py-1 rounded text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0">Copy</button>
-                    </div>
-                  `).join('')}
-                </div>
+              <div class="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                <div class="text-xs font-bold uppercase tracking-wider text-blue-700">Attention-Grabbing Opening Hook</div>
+                <p class="mt-1.5 text-base font-semibold text-slate-900">${escapeHtml(res.hook)}</p>
+                <p class="mt-1 text-xs text-slate-500">${escapeHtml(res.langNote)}</p>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
@@ -1787,7 +1760,6 @@
                     <div><strong>Camera &amp; Lighting:</strong> ${escapeHtml(s.camera)}</div>
                     <div><strong>On-Screen Text:</strong> <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-medium">${escapeHtml(s.onScreen)}</span></div>
                     <div><strong>Suggested B-Roll:</strong> ${escapeHtml(s.broll)}</div>
-                    <div><strong>Editing &amp; Transition:</strong> ${escapeHtml(s.editingTransition || 'Clean cut / J-cut')}</div>
                   </div>
                 </div>
               `).join('')}
@@ -1878,13 +1850,13 @@
                 <div>
                   <label for="ai-language" class="block text-[11px] font-semibold text-slate-600 mb-1">Language</label>
                   <select id="ai-language" class="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs bg-white">
-                    ${['English', 'Telugu', 'Tanglish', 'Tamil', 'Hindi', 'Kannada', 'Malayalam', 'Marathi', 'Bengali'].map(o => `<option ${g.language === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    ${['English', 'Telugu', 'Tamil', 'Hindi', 'Kannada', 'Malayalam', 'Marathi', 'Bengali'].map(o => `<option ${g.language === o ? 'selected' : ''}>${o}</option>`).join('')}
                   </select>
                 </div>
                 <div>
-                  <label for="ai-content-type" class="block text-[11px] font-semibold text-slate-600 mb-1">Vlogger Style</label>
+                  <label for="ai-content-type" class="block text-[11px] font-semibold text-slate-600 mb-1">Content Type</label>
                   <select id="ai-content-type" class="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs bg-white">
-                    ${['Daily Vlogger', 'Travel Vlogger', 'Tech Vlogger', 'Educational Creator', 'Food Vlogger', 'Lifestyle Creator', 'Product Review', 'Storytelling'].map(o => `<option ${g.contentType === o ? 'selected' : ''}>${o}</option>`).join('')}
+                    ${['Educational', 'Personal Vlog', 'Motivational', 'Technology', 'Product Review', 'Tutorial', 'Storytelling'].map(o => `<option ${g.contentType === o ? 'selected' : ''}>${o}</option>`).join('')}
                   </select>
                 </div>
                 <div>
