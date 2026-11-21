@@ -1,2 +1,12 @@
-# Vlog-spark--ai
-VlogSpark AI – Your Personal AI Content Creation Assistant  VlogSpark AI is an intelligent, AI-powered content creation platform that transforms simple titles, topics and ideas into complete, natural-sounding social media content.  Just enter a title, and VlogSpark AI understands your idea and automatically generates engaging scripts, 
+# VlogSpark AI
+
+Your Personal AI Content Director — From One Idea to a Complete Video.
+
+## Files Included
+- `index.html`: Upgraded VlogSpark AI web app (ready for GitHub Pages)
+- `portfolio.html` & `portfolio_index.pdf`: Personal portfolio page and printable PDF
+- `vlogspark_backend/`: FastAPI + Gemini API server-side backend
+
+## Quick Deploy (GitHub Pages)
+1. Push this folder to your `main` branch.
+2. Go to **Settings → Pages**, select **Deploy from a branch**, and choose `main` / `/ (root)`.
