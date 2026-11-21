@@ -1,0 +1,19 @@
+VLOGSPARK AI — VERCEL DEPLOYMENT CHECKLIST
+
+[ ] Extract ZIP
+[ ] Upload project files to a GitHub repository
+[ ] Import repository into Vercel
+[ ] Create and connect Vercel Blob store
+[ ] Add GEMINI_API_KEY
+[ ] Add FAL_KEY
+[ ] Add SHOTSTACK_API_KEY
+[ ] Add GEMINI_MODEL=gemini-2.5-flash
+[ ] Add FAL_VIDEO_MODEL=fal-ai/kling-video/v3/standard/text-to-video
+[ ] Add SHOTSTACK_ENV=stage
+[ ] Redeploy
+[ ] Open /api/health and confirm all provider flags are true
+[ ] Test with a non-sensitive voice recording
+[ ] Check provider usage/pricing before any production render
+
+Do not commit .env files or API keys. Do not expose the public deployment until
+authentication, quotas and rate limits have been added.
